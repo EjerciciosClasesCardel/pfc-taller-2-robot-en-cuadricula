@@ -277,3 +277,317 @@ s_0 = (a_1, \text{List}(a_2, \ldots, a_k)) \implies a_1 = f(\text{List}(a_1))
 $k$ iteraciones, $l = \text{List}()$.
 
 Esto implica que $P_f(L) == \text{maxAux}(L.\text{head}, L.\text{tail}) == f(L)$
+
+
+<!-- Arriba va el ejemplo original (factorial y máximo), sin cambios -->
+
+---
+
+# Informe de corrección: Taller 2, un robot en la cuadrícula
+
+## Definición de referencia de `ejecutar`
+
+Para justificar `componer` se usan los dos casos de `ejecutar` sobre
+secuencias, tal como están implementados en `RobotCuadricula.scala`:
+
+```scala
+case Secuencia(Nil) => e
+case Secuencia(primera :: resto) =>
+  ejecutar(ejecutar(e, primera), Secuencia(resto))
+```
+
+En notación matemática:
+
+```math
+\text{ejecutar}(e, \text{Secuencia}(\text{Nil})) = e
+```
+
+```math
+\text{ejecutar}(e, \text{Secuencia}(c :: cs)) = \text{ejecutar}(\text{ejecutar}(e, c), \text{Secuencia}(cs))
+```
+
+Es decir, una secuencia ejecuta sus órdenes de izquierda a derecha, pasando el
+estado resultante de una a la siguiente.
+
+## Punto 1: `girar`
+
+> TODO: responsable del punto 1.
+
+## Punto 2: `ejecutar`
+
+> TODO: responsable del punto 2.
+
+## Punto 3: `cuantasBasicas` y `profundidad`
+
+### Especificación de `cuantasBasicas`
+
+Sea $B : \text{Orden} \to \mathbb{N}$ la función que cuenta cuántos `Avanzar` y
+`Girar` se ejecutan, contando repeticiones:
+
+```math
+B(\text{Avanzar}(n)) = 1 \qquad B(\text{Girar}(s)) = 1
+```
+
+```math
+B(\text{Repetir}(v, o)) = \max(v, 0) \ast B(o)
+```
+
+```math
+B(\text{Secuencia}(\text{List}(o_1, \ldots, o_k))) = \sum_{i=1}^{k} B(o_i)
+```
+
+Se quiere demostrar:
+
+```math
+\forall o \in \text{Orden} : \text{cuantasBasicas}(o) == B(o)
+```
+
+**Método:** inducción estructural sobre `Orden`. Hay dos casos base (`Avanzar`
+y `Girar`) y dos casos de inducción (`Repetir` y `Secuencia`).
+
+**Caso base `Avanzar(n)`:**
+
+```math
+\text{cuantasBasicas}(\text{Avanzar}(n)) \rightarrow 1 = B(\text{Avanzar}(n))
+```
+
+**Caso base `Girar(s)`:**
+
+```math
+\text{cuantasBasicas}(\text{Girar}(s)) \rightarrow 1 = B(\text{Girar}(s))
+```
+
+**Caso de inducción `Repetir(v, o)`:** la hipótesis de inducción (HI) es
+$\text{cuantasBasicas}(o) == B(o)$. Hay dos posibilidades:
+
+- Si $v \leq 0$, la guarda `if veces <= 0` devuelve $0$, y
+  $B(\text{Repetir}(v, o)) = \max(v, 0) \ast B(o) = 0 \ast B(o) = 0$.
+- Si $v > 0$, se devuelve $v \ast \text{cuantasBasicas}(o)$. Por la HI,
+  esto es $v \ast B(o) = \max(v, 0) \ast B(o) = B(\text{Repetir}(v, o))$.
+
+**Caso de inducción `Secuencia(L)`:** la HI es que
+$\text{cuantasBasicas}(o_i) == B(o_i)$ para cada $o_i$ de $L$. Se demuestra
+por inducción sobre la longitud $k$ de la lista:
+
+- $k = 0$: $\text{cuantasBasicas}(\text{Secuencia}(\text{Nil})) \rightarrow 0 = B(\text{Secuencia}(\text{Nil}))$,
+  porque la suma vacía es 0.
+- $k \geq 1$, con $L = o_1 :: \text{List}(o_2, \ldots, o_k)$:
+
+```math
+\text{cuantasBasicas}(\text{Secuencia}(L)) \rightarrow \text{cuantasBasicas}(o_1) + \text{cuantasBasicas}(\text{Secuencia}(\text{List}(o_2, \ldots, o_k)))
+```
+
+Por la HI sobre $o_1$ y por la HI sobre la lista más corta, esto es
+$B(o_1) + \sum_{i=2}^{k} B(o_i) = \sum_{i=1}^{k} B(o_i) = B(\text{Secuencia}(L))$.
+
+Concluimos por inducción estructural que
+$\forall o \in \text{Orden} : \text{cuantasBasicas}(o) == B(o)$.
+
+**Terminación:** en cada llamada recursiva el argumento es una subexpresión
+estricta de la orden original (el cuerpo del `Repetir`, un elemento de la
+lista o la cola de la lista), y el tipo es finito, así que la recursión
+termina.
+
+### Especificación de `profundidad`
+
+Sea $P : \text{Orden} \to \mathbb{N}$:
+
+```math
+P(\text{Avanzar}(n)) = P(\text{Girar}(s)) = 1 \qquad P(\text{Repetir}(v, o)) = 1 + P(o)
+```
+
+```math
+P(\text{Secuencia}(\text{Nil})) = 1 \qquad P(\text{Secuencia}(\text{List}(o_1, \ldots, o_k))) = 1 + \max_{i} P(o_i), \; k \geq 1
+```
+
+Se quiere demostrar $\forall o \in \text{Orden} : \text{profundidad}(o) == P(o)$.
+
+**Lema (función auxiliar `mayorP`).** Si la HI vale para cada elemento de una
+lista $L = \text{List}(o_1, \ldots, o_k)$, entonces
+
+```math
+\text{mayorP}(L) = \begin{cases} 0 & k = 0 \\ \max_i P(o_i) & k \geq 1 \end{cases}
+```
+
+*Prueba por inducción sobre $k$:*
+
+- $k = 0$: `mayorP(Nil)` devuelve $0$.
+- $k \geq 1$: `mayorP(o_1 :: resto)` calcula `actual = profundidad(o_1)` y
+  `resto = mayorP(List(o_2, ..., o_k))`, y devuelve el mayor de los dos. Por
+  la HI, $\text{actual} = P(o_1)$. Por la hipótesis sobre la lista más corta,
+  $\text{resto} = \max_{i \geq 2} P(o_i)$, que es $0$ si $k = 1$. Como
+  $P(o_1) \geq 1 > 0$, el mayor de los dos es $\max_{i \geq 1} P(o_i)$. $\square$
+
+**Caso base `Avanzar` y `Girar`:** devuelven $1 = P(\cdot)$.
+
+**Caso de inducción `Repetir(v, o)`:** por la HI,
+$\text{profundidad}(\text{Repetir}(v, o)) \rightarrow 1 + \text{profundidad}(o) = 1 + P(o) = P(\text{Repetir}(v, o))$.
+
+**Caso de inducción `Secuencia(L)`:**
+
+- Si $L = \text{Nil}$, se devuelve $1 = P(\text{Secuencia}(\text{Nil}))$.
+- Si $L \neq \text{Nil}$, se devuelve $1 + \text{mayorP}(L)$, que por el lema y
+  la HI es $1 + \max_i P(o_i) = P(\text{Secuencia}(L))$.
+
+Concluimos por inducción estructural que
+$\forall o \in \text{Orden} : \text{profundidad}(o) == P(o)$.
+
+## Punto 4: `componer`, `rutina`, `aplicarA` y `transformar`
+
+### `componer`
+
+Se quiere demostrar que la orden compuesta equivale a ejecutar sus partes en
+orden:
+
+```math
+\forall e \in \text{Estado},\ \forall o_1, o_2 \in \text{Orden} : \text{ejecutar}(e, \text{componer}(o_1, o_2)) == \text{ejecutar}(\text{ejecutar}(e, o_1), o_2)
+```
+
+`componer` no es recursiva, así que no necesita inducción. Basta con el
+modelo de sustitución y la definición de `ejecutar` sobre secuencias:
+
+```math
+\text{ejecutar}(e, \text{componer}(o_1, o_2)) \rightarrow \text{ejecutar}(e, \text{Secuencia}(\text{List}(o_1, o_2)))
+```
+
+```math
+\rightarrow \text{ejecutar}(\text{ejecutar}(e, o_1), \text{Secuencia}(\text{List}(o_2)))
+```
+
+```math
+\rightarrow \text{ejecutar}(\text{ejecutar}(\text{ejecutar}(e, o_1), o_2), \text{Secuencia}(\text{Nil}))
+```
+
+```math
+\rightarrow \text{ejecutar}(\text{ejecutar}(e, o_1), o_2)
+```
+
+El último paso usa $\text{ejecutar}(e', \text{Secuencia}(\text{Nil})) = e'$.
+
+Por lo tanto, ejecutar `componer(o1, o2)` equivale a ejecutar `o1` y luego
+`o2` sobre el estado resultante.
+
+**Consecuencia sobre las otras medidas.** Por los resultados del punto 3:
+
+```math
+\text{cuantasBasicas}(\text{componer}(o_1, o_2)) = B(o_1) + B(o_2)
+```
+
+```math
+\text{profundidad}(\text{componer}(o_1, o_2)) = 1 + \max(P(o_1), P(o_2))
+```
+
+**Ejemplo:** con $e = (0, 0, \text{Norte})$,
+$o_1 = \text{Avanzar}(2)$ y $o_2 = \text{Girar}(\text{Derecha})$:
+$\text{ejecutar}(e, o_1) = (0, 2, \text{Norte})$ y
+$\text{ejecutar}((0, 2, \text{Norte}), o_2) = (0, 2, \text{Este})$, que es
+el resultado de `ejecutar(e, componer(o1, o2))`.
+
+> TODO: responsable de `rutina`, `aplicarA` y `transformar`.
+
+## Punto 5 Informe de corrección: `simplificar`
+
+## Notación
+
+Un estado es una terna $e = (x, y, d)$ con $d \in \{N, E, S, O\}$ y vectores unitarios
+
+$$\delta(N) = (0, 1), \quad \delta(E) = (1, 0), \quad \delta(S) = (0, -1), \quad \delta(O) = (-1, 0)$$
+
+Se escribe $\mathcal{E}(o, e)$ para el estado que devuelve `ejecutar(e, o)`, y $o_1 \equiv o_2$ cuando
+
+$$\forall e.\ \mathcal{E}(o_1, e) = \mathcal{E}(o_2, e)$$
+
+Las definiciones de `ejecutar` que se usan son:
+
+$$\mathcal{E}(\texttt{Avanzar}(n), (x, y, d)) = (x + n\,\delta_x(d),\ y + n\,\delta_y(d),\ d)$$
+
+$$\mathcal{E}(\texttt{Repetir}(v, o), e) = \begin{cases} e & \text{si } v \le 0 \\ \mathcal{E}(\texttt{Repetir}(v-1, o), \mathcal{E}(o, e)) & \text{si } v > 0 \end{cases}$$
+
+$$\mathcal{E}(\texttt{Secuencia}(\text{Nil}), e) = e, \qquad \mathcal{E}(\texttt{Secuencia}(o :: l), e) = \mathcal{E}(\texttt{Secuencia}(l), \mathcal{E}(o, e))$$
+
+Se escribe $\text{nada} = \texttt{Secuencia}(\text{Nil})$.
+
+## Teorema
+
+Para toda orden $o$ y todo estado $e$:
+
+$$\mathcal{E}(\texttt{simplificar}(o), e) = \mathcal{E}(o, e)$$
+
+## Lemas previos
+
+**Lema 1 (secuencia de dos listas).** Para listas $l_1$ y $l_2$:
+
+$$\mathcal{E}(\texttt{Secuencia}(l_1 \mathbin{+\!\!+} l_2), e) = \mathcal{E}(\texttt{Secuencia}(l_2), \mathcal{E}(\texttt{Secuencia}(l_1), e))$$
+
+*Demostración.* Inducción sobre $l_1$.
+
+- Base, $l_1 = \text{Nil}$: ambos lados valen $\mathcal{E}(\texttt{Secuencia}(l_2), e)$.
+- Paso, $l_1 = o :: l_1'$: por definición el lado izquierdo es $\mathcal{E}(\texttt{Secuencia}(l_1' \mathbin{+\!\!+} l_2), \mathcal{E}(o, e))$. Por hipótesis de inducción esto es $\mathcal{E}(\texttt{Secuencia}(l_2), \mathcal{E}(\texttt{Secuencia}(l_1'), \mathcal{E}(o, e)))$, y como $\mathcal{E}(\texttt{Secuencia}(l_1'), \mathcal{E}(o, e)) = \mathcal{E}(\texttt{Secuencia}(o :: l_1'), e)$, queda demostrado. $\blacksquare$
+
+**Lema 2.** $\mathcal{E}(\texttt{Avanzar}(n), (x, y, d))$ conserva la dirección $d$. Se sigue de la definición.
+
+## Equivalencia de cada regla
+
+**Regla 1a: $\texttt{Avanzar}(0) \equiv \text{nada}$.** Con $n = 0$ el desplazamiento es $(0, 0)$, así que $\mathcal{E}(\texttt{Avanzar}(0), e) = e = \mathcal{E}(\text{nada}, e)$.
+
+**Regla 1b: $\texttt{Repetir}(v, o) \equiv \text{nada}$ si $v \le 0$.** Por definición, $\mathcal{E}(\texttt{Repetir}(v, o), e) = e$ cuando $v \le 0$.
+
+**Regla 2: $\texttt{Avanzar}(a), \texttt{Avanzar}(b)$ seguidos $\equiv \texttt{Avanzar}(a + b)$.** Sea $e = (x, y, d)$. Tras $\texttt{Avanzar}(a)$ el estado es $(x + a\delta_x, y + a\delta_y, d)$ y la dirección sigue siendo $d$ (Lema 2). Tras $\texttt{Avanzar}(b)$ es
+
+$$(x + (a+b)\delta_x,\ y + (a+b)\delta_y,\ d) = \mathcal{E}(\texttt{Avanzar}(a+b), e)$$
+
+**Regla 3: $\texttt{Repetir}(1, o) \equiv o$.** Por definición, $\mathcal{E}(\texttt{Repetir}(1, o), e) = \mathcal{E}(\texttt{Repetir}(0, o), \mathcal{E}(o, e)) = \mathcal{E}(o, e)$, porque repetir cero veces no hace nada.
+
+**Regla 4: $\texttt{Secuencia}(o :: \text{Nil}) \equiv o$.** Por definición, $\mathcal{E}(\texttt{Secuencia}(o :: \text{Nil}), e) = \mathcal{E}(\text{nada}, \mathcal{E}(o, e)) = \mathcal{E}(o, e)$.
+
+**Regla 5: quitar una orden neutra.** Si $n \equiv \text{nada}$, entonces
+
+$$\texttt{Secuencia}(l_1 \mathbin{+\!\!+} (n :: l_2)) \equiv \texttt{Secuencia}(l_1 \mathbin{+\!\!+} l_2)$$
+
+Por el Lema 1, ejecutar $l_1$, luego $n$ y luego $l_2$ da el mismo estado que ejecutar $l_1$ y luego $l_2$, porque $n$ deja el estado intacto.
+
+**Caso auxiliar: $\texttt{Repetir}(v, n) \equiv \text{nada}$ si $n \equiv \text{nada}$.** Inducción sobre $v$. Si $v \le 0$ es la regla 1b. Si $v > 0$, $\mathcal{E}(\texttt{Repetir}(v, n), e) = \mathcal{E}(\texttt{Repetir}(v-1, n), \mathcal{E}(n, e)) = \mathcal{E}(\texttt{Repetir}(v-1, n), e) = e$ por hipótesis de inducción. Esto justifica devolver $\text{nada}$ cuando el cuerpo de un `Repetir` se simplifica a `Secuencia(Nil)`.
+
+## La función `juntar`
+
+**Lema 3.** $\texttt{Secuencia}(\texttt{juntar}(l)) \equiv \texttt{Secuencia}(l)$.
+
+*Demostración.* Inducción sobre la longitud de $l$. La rama que sustituye $\texttt{Avanzar}(a) :: \texttt{Avanzar}(b) :: \text{resto}$ por $\texttt{Avanzar}(a+b) :: \text{resto}$ usa la regla 2 y el Lema 1. La rama $x :: \text{resto}$ conserva $x$ y trata el resto por hipótesis de inducción. La rama $\text{Nil}$ es trivial. $\blacksquare$
+
+## Una pasada conserva el resultado
+
+**Lema 4.** Para toda orden $o$: $\texttt{unaPasada}(o) \equiv o$.
+
+*Demostración.* Inducción estructural sobre $o$.
+
+- $\texttt{Avanzar}(0)$: devuelve $\text{nada}$, equivalente por la regla 1a.
+- $\texttt{Avanzar}(n)$ con $n \ne 0$ y $\texttt{Girar}(s)$: devuelven la misma orden.
+- $\texttt{Repetir}(v, x)$ con $v \le 0$: devuelve $\text{nada}$, equivalente por la regla 1b.
+- $\texttt{Repetir}(1, x)$: devuelve $\texttt{unaPasada}(x)$, equivalente a $x$ por hipótesis de inducción, y $x \equiv \texttt{Repetir}(1, x)$ por la regla 3.
+- $\texttt{Repetir}(v, x)$ con $v > 1$: sea $y = \texttt{unaPasada}(x) \equiv x$. Si $y = \text{nada}$ se devuelve $\text{nada}$, equivalente por el caso auxiliar. Si no, se devuelve $\texttt{Repetir}(v, y)$, equivalente a $\texttt{Repetir}(v, x)$ porque repetir $v$ veces órdenes equivalentes da el mismo resultado.
+- $\texttt{Secuencia}(l)$: cada elemento se simplifica y por hipótesis de inducción es equivalente al original. Luego se filtran los $\text{nada}$ (regla 5) y se aplica `juntar` (Lema 3). Por último, el resultado vacío es $\text{nada}$, el de un elemento es ese elemento (regla 4) y en otro caso es una `Secuencia`. Todos estos pasos conservan el resultado. $\blacksquare$
+
+## Repetir hasta que no cambie
+
+`simplificar(o)` aplica `unaPasada` repetidamente hasta que el resultado sea igual a la entrada.
+
+**Terminación.** Para una orden se define el par $(\text{nodos}, \text{ceros})$, donde `nodos` es el número de constructores y `ceros` la cantidad de $\texttt{Avanzar}(0)$ que contiene. Una pasada que cambia algo hace una de estas cosas:
+
+- elimina al menos un nodo (reglas 1b, 2, 3, 4 o 5), o
+- convierte un $\texttt{Avanzar}(0)$ en $\text{nada}$ (regla 1a), que mantiene los nodos y baja `ceros`.
+
+La regla 2 puede crear un $\texttt{Avanzar}(0)$ cuando $a + b = 0$, pero a la vez elimina un nodo, así que `nodos` baja. El par decrece en orden lexicográfico en cada pasada que cambia la orden, y como ese orden es bien fundado el proceso termina.
+
+**Corrección.** Por el Lema 4, cada pasada conserva el resultado de `ejecutar`. Por inducción sobre el número de pasadas, $\texttt{simplificar}(o) \equiv o$, es decir,
+
+$$\mathcal{E}(\texttt{simplificar}(o), e) = \mathcal{E}(o, e) \quad \blacksquare$$
+
+## La salida cumple las reglas
+
+Cuando $\texttt{unaPasada}(o) = o$, ninguna regla es aplicable a $o$. Entonces la salida no contiene $\texttt{Avanzar}(0)$, ni $\texttt{Repetir}$ con $v \le 1$, ni secuencias de un solo elemento, ni órdenes que no hacen nada dentro de secuencias, ni dos `Avanzar` contiguos.
+
+De aquí sale también la idempotencia: $\texttt{simplificar}(\texttt{simplificar}(o)) = \texttt{simplificar}(o)$, porque la salida ya es un punto fijo de `unaPasada`.
+
+## Relación con las pruebas
+
+Las pruebas de ScalaTest comprueban el teorema sobre casos concretos: para varias órdenes y estados verifican que $\mathcal{E}(o, e) = \mathcal{E}(\texttt{simplificar}(o), e)$, además de la idempotencia.

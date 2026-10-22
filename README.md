@@ -14,12 +14,12 @@ Llene esta tabla con el nombre completo y el código de cada integrante. Es
 parte de la entrega: si falta alguno, la entrega se sanciona con el 20 % de
 la nota.
 
-| Nombre completo | Código |
-|---|---|
-| | |
-| | |
-| | |
-| | |
+| Nombre completo               | Código  |
+|-------------------------------|---------|
+| Santiago Velandia Lozano      | 2559822 |
+| David Alejandro López Álvarez | 2559790 |
+| Sebastian Castro Cárdenas     | 2559772 |
+| Juan stevan Cataño Hernandez  | 2559832 |
 
 ## Cómo está organizado el proyecto
 
@@ -79,13 +79,13 @@ sobre las alternativas del tipo, un caso por cada una.
 
 ## Los cinco puntos
 
-| Punto | Función |
-|---|---|
-| 1 | `girar(d: Direccion, s: Sentido): Direccion` |
-| 2 | `ejecutar(e: Estado, o: Orden): Estado` |
-| 3 | `cuantasBasicas(o: Orden): Int` y `profundidad(o: Orden): Int` |
-| 4 | `componer`, `rutina(pasos)(giro)(veces)`, `aplicarA` y `transformar(o, f)` |
-| 5 | `simplificar(o: Orden): Orden` |
+| Punto | Función                                                                    |
+|-------|----------------------------------------------------------------------------|
+| 1     | `girar(d: Direccion, s: Sentido): Direccion`                               |
+| 2     | `ejecutar(e: Estado, o: Orden): Estado`                                    |
+| 3     | `cuantasBasicas(o: Orden): Int` y `profundidad(o: Orden): Int`             |
+| 4     | `componer`, `rutina(pasos)(giro)(veces)`, `aplicarA` y `transformar(o, f)` |
+| 5     | `simplificar(o: Orden): Orden`                                             |
 
 El punto 1 se resuelve con `match` sobre la pareja `(d, s)`, sin
 condicionales encadenados. El 4 tiene la función currificada y las dos que
